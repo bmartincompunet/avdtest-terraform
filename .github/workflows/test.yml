@@ -1,0 +1,66 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+    
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build-image:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    - name: Log in with Azure
+      uses: azure/login@v1
+      with:
+         client-id: ${{ secrets.AZURE_CLIENT_ID }}
+         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Build Azure Virtual Machine Image
+      uses: Azure/build-vm-image@v0.1.1
+      with:
+        # This is the Azure region in which the Image Builder will run.
+        location: eastus
+        # This is the Resource Group where the temporary Imagebuilder Template resource will be created.
+        resource-group-name: avd-test-rg
+        # The name of the image builder template resource to be used for creating and running the Image builder service.
+        image-builder-template-name: avdtest-template
+        # The value is an integer which is used as timeout in minutes for running the image build.
+        #build-timeout-in-minutes: # optional, default is 240
+        # You can override the VM size, from the default value i.e. Standard_D1_v2.
+        vm-size: Standard_B2ms
+        # The identity that will be used to do the role assignment and resource creation
+        managed-identity: /subscriptions/b54128cb-fb59-401c-893a-444890d3c351/resourcegroups/avd-test-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/avdmi
+        # [ PlatformImage | SharedImageGallery | ManagedImage ]
+        #source-image-type: PlatformImage
+        # OS types supported: [ linux | windows ].
+        source-os-type: windows
+        # Value of source-image supported by Azure Image Builder.
+        source-image: microsoftwindowsdesktop:office-365:win11-21h2-avd-m365:latest
+        # This takes the path to a directory or a file in the runner. By default, it points to the default download directory of the github runner.
+        #customizer-source: # optional
+        # The customer can enter multi inline powershell or shell commands and use variables to point to directories inside the downloaded location.
+        #customizer-script: # optional
+        # The value is boolean and set to false by default. This value is for Windows images only, the image builder will run Windows Update at the end of the customizations and also handle the reboots it requires.
+        #customizer-windows-update: # optional
+        # ManagedImage | SharedImageGallery | VHD
+        dist-type: SharedImageGallery
+        # Image Resource Id to be created by AIB
+        dist-resource-id: /subscriptions/b54128cb-fb59-401c-893a-444890d3c351/resourceGroups/avd-test-rg/providers/Microsoft.Compute/galleries/testimagegallery/images/testvmimagedefinition
+        # location of Image created by AIB
+        dist-location: eastus
+        # Every Image builder run is identified with a unique run id.
+        #run-output-name: # optional
+        # The values set will be used to set the user defined tags on the custom image artifact created.
+        #dist-image-tags: # optional
